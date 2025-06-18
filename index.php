@@ -1,4 +1,11 @@
-<?php include 'db.php'; ?>
+<?php 
+include 'db.php';
+session_start();
+if (!isset($_SESSION['login'])) {
+    header("Location: login.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,14 +58,34 @@
     <a href="create.php">📝 Tambah Artikel</a>
     <a href="index.php">📄 Daftar Artikel</a>
     <a href="#">⚙️ Pengaturan</a>
+    <a href="logout.php">🚪 Logout</a>
   </div>
   <div class="content">
     <div class="container">
       <h2 class="mb-4">Daftar Artikel</h2>
+      
+      <!-- Form Pencarian -->
+      <form method="GET" class="mb-4">
+        <div class="input-group" style="max-width: 400px;">
+          <input type="text" name="q" class="form-control" placeholder="Cari artikel..." value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>">
+          <button class="btn btn-outline-secondary" type="submit">Cari</button>
+          <?php if (isset($_GET['q']) && $_GET['q'] != ''): ?>
+            <a href="index.php" class="btn btn-outline-danger">Reset</a>
+          <?php endif; ?>
+        </div>
+      </form>
+
       <div class="row">
         <?php
-        $result = $conn->query("SELECT * FROM artikel ORDER BY id DESC");
-        while ($row = $result->fetch_assoc()) {
+        $q = isset($_GET['q']) ? $conn->real_escape_string($_GET['q']) : '';
+        if ($q != '') {
+            $result = $conn->query("SELECT * FROM artikel WHERE judul LIKE '%$q%' OR isi LIKE '%$q%' ORDER BY id DESC");
+        } else {
+            $result = $conn->query("SELECT * FROM artikel ORDER BY id DESC");
+        }
+
+        if ($result->num_rows > 0) {
+          while ($row = $result->fetch_assoc()) {
         ?>
         <div class="col-md-4 mb-4">
           <div class="card">
@@ -71,7 +98,14 @@
             </div>
           </div>
         </div>
-        <?php } ?>
+        <?php 
+          }
+        } else {
+        ?>
+        <p class="text-muted">Tidak ada artikel yang ditemukan.</p>
+        <?php
+        }
+        ?>
       </div>
     </div>
   </div>
